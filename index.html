@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ImpulsoChat">
+  <link rel="manifest" href="manifest.json">
+  <title>ImpulsoChat — Call Center</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --bg3: #1a1a24;
+      --border: #2a2a3a;
+      --accent: #4f6ef7;
+      --accent2: #7c3aed;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --text: #f0f0f8;
+      --text2: #8888aa;
+      --text3: #555570;
+      --radius: 14px;
+      --font: 'Sora', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 10px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .logo { font-size: 16px; font-weight: 700; letter-spacing: -0.5px; white-space: nowrap; }
+    .logo span { color: var(--accent); }
+    .page-selector {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      outline: none;
+      flex: 1;
+      min-width: 0;
+      max-width: 180px;
+    }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
+    .btn-icon {
+      width: 36px; height: 36px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text2);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-icon:active { transform: scale(0.93); background: var(--border); }
+    .btn-icon.active { color: var(--accent); border-color: var(--accent); }
+
+    /* ── STATUS BAR ── */
+    .statusbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+    .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 20px;
+      margin-left: auto;
+    }
+
+    /* ── LAYOUT ── */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── CONVERSATION LIST ── */
+    .conv-list {
+      width: 100%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease;
+    }
+    .conv-list.hidden { display: none; }
+
+    .search-wrap {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      outline: none;
+    }
+    .search-input::placeholder { color: var(--text3); }
+    .search-input:focus { border-color: var(--accent); }
+
+    .conv-scroll { flex: 1; overflow-y: auto; }
+    .conv-scroll::-webkit-scrollbar { width: 3px; }
+    .conv-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .conv-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+      position: relative;
+    }
+    .conv-item:active { background: var(--bg3); }
+    .conv-item.selected { background: var(--bg3); border-left: 3px solid var(--accent); }
+    .conv-item.unread .conv-name { font-weight: 600; color: var(--text); }
+    .conv-item.unread .conv-preview { color: var(--text2); }
+
+    .avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .avatar.page-avatar {
+      width: 18px; height: 18px;
+      position: absolute;
+      bottom: -2px; right: -2px;
+      font-size: 8px;
+      border: 2px solid var(--bg);
+    }
+
+    .conv-info { flex: 1; min-width: 0; }
+    .conv-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .conv-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .conv-time { font-size: 11px; color: var(--text3); white-space: nowrap; font-family: var(--mono); }
+    .conv-sub { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+    .conv-preview { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .conv-page-tag { font-size: 10px; color: var(--accent); background: rgba(79,110,247,0.12); padding: 1px 6px; border-radius: 4px; white-space: nowrap; margin-left: 6px; flex-shrink: 0; }
+    .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text3);
+      padding: 40px;
+      text-align: center;
+    }
+    .empty-icon { font-size: 48px; }
+    .empty-title { font-size: 16px; font-weight: 500; color: var(--text2); }
+    .empty-sub { font-size: 13px; line-height: 1.5; }
+
+    /* ── CHAT VIEW ── */
+    .chat-view {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    .chat-view.active { display: flex; }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .btn-back {
+      background: none; border: none; color: var(--text2);
+      font-size: 20px; cursor: pointer; padding: 4px;
+      display: flex; align-items: center;
+    }
+    .chat-header-info { flex: 1; min-width: 0; }
+    .chat-header-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-header-page { font-size: 12px; color: var(--accent); }
+
+    .messages-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .messages-scroll::-webkit-scrollbar { width: 3px; }
+    .messages-scroll::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .msg-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 80%;
+    }
+    .msg-wrap.from-page { align-self: flex-end; align-items: flex-end; }
+    .msg-wrap.from-user { align-self: flex-start; align-items: flex-start; }
+
+    .msg-bubble {
+      padding: 9px 13px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .from-page .msg-bubble {
+      background: var(--accent);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .from-user .msg-bubble {
+      background: var(--bg3);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .msg-time {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: var(--mono);
+      padding: 0 4px;
+    }
+    .msg-date-sep {
+      align-self: center;
+      font-size: 11px;
+      color: var(--text3);
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin: 8px 0;
+    }
+
+    /* ── REPLY BAR ── */
+    .reply-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .reply-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      padding: 10px 13px;
+      border-radius: 12px;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      min-height: 42px;
+      line-height: 1.4;
+    }
+    .reply-input:focus { border-color: var(--accent); }
+    .reply-input::placeholder { color: var(--text3); }
+    .btn-send {
+      width: 42px; height: 42px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .btn-send:active { transform: scale(0.92); background: var(--accent2); }
+    .btn-send:disabled { opacity: 0.4; }
+
+    /* ── SETTINGS PANEL ── */
+    .settings-panel {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 16px;
+      gap: 16px;
+    }
+    .settings-panel.active { display: flex; }
+    .settings-section { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .settings-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 12px 14px 6px; }
+    .settings-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-icon { font-size: 20px; width: 32px; text-align: center; }
+    .settings-row-info { flex: 1; min-width: 0; }
+    .settings-row-label { font-size: 14px; font-weight: 500; }
+    .settings-row-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+    .settings-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      outline: none;
+      margin-top: 6px;
+    }
+    .settings-input:focus { border-color: var(--accent); }
+    .btn-save {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.15s;
+    }
+    .btn-save:active { transform: scale(0.98); background: var(--accent2); }
+
+    /* ── LOADING ── */
+    .loading-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 12px; flex: 1; color: var(--text3);
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 80px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.2s;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error { border-color: var(--red); color: var(--red); }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 8px 4px;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      cursor: pointer;
+      color: var(--text3);
+      font-size: 10px;
+      font-weight: 500;
+      transition: color 0.15s;
+      border: none;
+      background: none;
+    }
+    .tab.active { color: var(--accent); }
+    .tab-icon { font-size: 20px; }
+    .tab-badge {
+      position: relative;
+    }
+    .tab-badge::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -4px; right: -8px;
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 10px;
+      min-width: 14px;
+      text-align: center;
+      display: none;
+    }
+    .tab-badge[data-count]:not([data-count="0"])::after { display: block; }
+
+    /* ── SCREEN MANAGER ── */
+    .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .screen.active { display: flex; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Impulso<span>Chat</span></div>
+    <select class="page-selector" id="pageSelector" onchange="onPageChange()">
+      <option value="all">Todas las páginas</option>
+    </select>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-icon" id="btnRefresh" onclick="loadConversations()" title="Actualizar">↻</button>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="dot" id="statusDot"></div>
+  <span id="statusText">Iniciando...</span>
+  <span class="badge" id="unreadBadge" style="display:none"></span>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+
+  <!-- SCREEN: INBOX -->
+  <div class="screen active" id="screenInbox">
+    <div class="conv-list" id="convList">
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" placeholder="🔍 Buscar conversación..." oninput="filterConversations()">
+      </div>
+      <div class="conv-scroll" id="convScroll">
+        <div class="loading-wrap" id="loadingConvs">
+          <div class="spinner"></div>
+          <span>Cargando conversaciones...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT VIEW (se muestra sobre la lista en móvil) -->
+    <div class="chat-view" id="chatView">
+      <div class="chat-header">
+        <button class="btn-back" onclick="closeChat()">‹</button>
+        <div class="avatar" id="chatAvatar">?</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="chatName">—</div>
+          <div class="chat-header-page" id="chatPage">—</div>
+        </div>
+        <button class="btn-icon" onclick="loadChatMessages(currentConvId, currentPageToken, currentPageId)" title="Actualizar chat">↻</button>
+      </div>
+      <div class="messages-scroll" id="messagesScroll">
+        <div class="loading-wrap">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <div class="reply-bar">
+        <textarea class="reply-input" id="replyInput" placeholder="Escribe un mensaje..." rows="1"
+          oninput="autoResize(this)" onkeydown="onReplyKey(event)"></textarea>
+        <button class="btn-send" id="btnSend" onclick="sendReply()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SETTINGS -->
+  <div class="screen" id="screenSettings">
+    <div class="settings-panel active">
+      <div class="settings-section">
+        <div class="settings-title">Configuración de API</div>
+        <div class="settings-row">
+          <div class="settings-row-icon">🔑</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">Supabase URL</div>
+            <input class="settings-input" id="cfgSupabaseUrl" placeholder="https://xxx.supabase.co" type="url">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon">🗝️</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">Supabase Anon Key</div>
+            <input class="settings-input" id="cfgSupabaseKey" placeholder="eyJ..." type="password">
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Información</div>
+        <div class="settings-row">
+          <div class="settings-row-icon">📱</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">ImpulsoChat PWA</div>
+            <div class="settings-row-sub">Call Center — v1.0</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon">📊</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">Páginas conectadas</div>
+            <div class="settings-row-sub" id="infoPages">—</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon">💬</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">Conversaciones cargadas</div>
+            <div class="settings-row-sub" id="infoConvs">—</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-icon">🕐</div>
+          <div class="settings-row-info">
+            <div class="settings-row-label">Última actualización</div>
+            <div class="settings-row-sub" id="infoLastUpdate">—</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-save" onclick="saveConfig()">💾 Guardar configuración</button>
+      <button class="btn-save" style="background:var(--bg3); border:1px solid var(--border); color:var(--text2); margin-top:-8px;" onclick="loadConversations()">🔄 Recargar conversaciones</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM TABS -->
+<div class="tabs">
+  <button class="tab active" id="tabInbox" onclick="switchTab('inbox')">
+    <div class="tab-icon tab-badge" id="inboxBadge" data-count="0">💬</div>
+    <span>Mensajes</span>
+  </button>
+  <button class="tab" id="tabSettings" onclick="switchTab('settings')">
+    <div class="tab-icon">⚙️</div>
+    <span>Config</span>
+  </button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════
+let config = {
+  supabaseUrl: localStorage.getItem('supabaseUrl') || '',
+  supabaseKey: localStorage.getItem('supabaseKey') || '',
+};
+let pages = [];           // [{pageId, token, nombre, ...}]
+let allConversations = []; // todas las convs de todas las páginas
+let filteredConvs = [];
+let currentConvId = null;
+let currentPageToken = null;
+let currentPageId = null;
+let currentConvName = null;
+let autoRefreshInterval = null;
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  loadConfigToForm();
+  if (config.supabaseUrl && config.supabaseKey) {
+    loadPages();
+  } else {
+    setStatus('amber', 'Configura Supabase en ⚙️');
+    document.getElementById('loadingConvs').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚙️</div>
+        <div class="empty-title">Configuración requerida</div>
+        <div class="empty-sub">Ve a Config y agrega tu Supabase URL y Key para comenzar.</div>
+      </div>`;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+function loadConfigToForm() {
+  document.getElementById('cfgSupabaseUrl').value = config.supabaseUrl;
+  document.getElementById('cfgSupabaseKey').value = config.supabaseKey;
+}
+
+function saveConfig() {
+  config.supabaseUrl = document.getElementById('cfgSupabaseUrl').value.trim().replace(/\/$/, '');
+  config.supabaseKey = document.getElementById('cfgSupabaseKey').value.trim();
+  localStorage.setItem('supabaseUrl', config.supabaseUrl);
+  localStorage.setItem('supabaseKey', config.supabaseKey);
+  showToast('✅ Configuración guardada', 'success');
+  loadPages();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════════
+async function supabaseGet(path) {
+  const res = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, {
+    headers: {
+      apikey: config.supabaseKey,
+      Authorization: `Bearer ${config.supabaseKey}`,
+    }
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FACEBOOK GRAPH API
+// ═══════════════════════════════════════════════════════════
+async function fbGet(pageId, path, token) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `https://graph.facebook.com/v19.0/${path}${sep}access_token=${token}`;
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function fbPost(path, token, body) {
+  const res = await fetch(`https://graph.facebook.com/v19.0/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, access_token: token })
+  });
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARGAR PÁGINAS DESDE SUPABASE
+// ═══════════════════════════════════════════════════════════
+async function loadPages() {
+  setStatus('amber', 'Conectando a Supabase...');
+  try {
+    const services = await supabaseGet(
+      `pages_services?select=id,id_pagina,contratos_servicios(clientes(cliente,negocio))&fecha_termino=is.null&order=id`
+    );
+    const pagesData = await supabaseGet(
+      `pages?select=id,id_page,token,nombre,date_expire_token`
+    );
+
+    const pagesMap = {};
+    for (const p of pagesData) pagesMap[p.id] = p;
+
+    const seen = new Set();
+    pages = [];
+    for (const svc of services) {
+      const page = pagesMap[svc.id_pagina];
+      if (!page?.token || !page?.id_page) continue;
+      if (page.date_expire_token && new Date(page.date_expire_token) < new Date()) continue;
+      const pid = String(page.id_page);
+      if (seen.has(pid)) continue;
+      seen.add(pid);
+      const cliente = svc.contratos_servicios?.clientes;
+      pages.push({
+        pageId: pid,
+        token: page.token,
+        nombre: page.nombre,
+        negocio: cliente?.negocio || cliente?.cliente || '',
+      });
+    }
+
+    // Poblar selector
+    const sel = document.getElementById('pageSelector');
+    sel.innerHTML = '<option value="all">Todas las páginas</option>';
+    for (const p of pages) {
+      const opt = document.createElement('option');
+      opt.value = p.pageId;
+      opt.textContent = p.nombre;
+      sel.appendChild(opt);
+    }
+
+    document.getElementById('infoPages').textContent = `${pages.length} páginas`;
+    setStatus('green', `${pages.length} páginas conectadas`);
+    loadConversations();
+
+    // Auto-refresh cada 2 min
+    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+    autoRefreshInterval = setInterval(loadConversations, 120000);
+
+  } catch (e) {
+    setStatus('', `Error: ${e.message}`);
+    showToast('❌ Error conectando a Supabase', 'error');
+    document.getElementById('loadingConvs').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">❌</div>
+        <div class="empty-title">Error de conexión</div>
+        <div class="empty-sub">${e.message}</div>
+      </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARGAR CONVERSACIONES
+// ═══════════════════════════════════════════════════════════
+async function loadConversations() {
+  if (!pages.length) return;
+  const btnR = document.getElementById('btnRefresh');
+  btnR.style.animation = 'spin 0.8s linear infinite';
+  setStatus('amber', 'Cargando mensajes...');
+
+  const selectedPage = document.getElementById('pageSelector').value;
+  const pagesToLoad = selectedPage === 'all' ? pages : pages.filter(p => p.pageId === selectedPage);
+
+  allConversations = [];
+
+  await Promise.all(pagesToLoad.map(async (page) => {
+    try {
+      const data = await fbGet(page.pageId,
+        `${page.pageId}/conversations?fields=id,updated_time,messages.limit(5){id,message,from,created_time}&limit=25`,
+        page.token
+      );
+      const convs = data.data || [];
+      for (const conv of convs) {
+        const msgs = conv.messages?.data || [];
+        const lastMsg = msgs[msgs.length - 1];
+        if (!lastMsg) continue;
+        const isUnread = String(lastMsg.from?.id) !== String(page.pageId);
+        allConversations.push({
+          id: conv.id,
+          pageId: page.pageId,
+          pageNombre: page.nombre,
+          pageToken: page.token,
+          updatedTime: conv.updated_time,
+          lastMsg,
+          messages: msgs,
+          unread: isUnread,
+          userName: msgs.find(m => String(m.from?.id) !== String(page.pageId))?.from?.name || 'Usuario',
+          userId: msgs.find(m => String(m.from?.id) !== String(page.pageId))?.from?.id,
+        });
+      }
+    } catch(e) {
+      console.warn(`Error página ${page.nombre}:`, e.message);
+    }
+  }));
+
+  // Ordenar: no leídos primero, luego por tiempo
+  allConversations.sort((a, b) => {
+    if (a.unread !== b.unread) return a.unread ? -1 : 1;
+    return new Date(b.updatedTime) - new Date(a.updatedTime);
+  });
+
+  const unreadCount = allConversations.filter(c => c.unread).length;
+  updateUnreadBadge(unreadCount);
+  document.getElementById('infoConvs').textContent = `${allConversations.length} conversaciones`;
+  document.getElementById('infoLastUpdate').textContent = new Date().toLocaleTimeString('es');
+  setStatus('green', `${allConversations.length} convs · ${unreadCount} sin responder`);
+
+  filterConversations();
+  btnR.style.animation = '';
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDERIZAR LISTA
+// ═══════════════════════════════════════════════════════════
+function filterConversations() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  filteredConvs = allConversations.filter(c =>
+    !q || c.userName.toLowerCase().includes(q) ||
+    c.pageNombre.toLowerCase().includes(q) ||
+    (c.lastMsg?.message || '').toLowerCase().includes(q)
+  );
+  renderConvList();
+}
+
+function renderConvList() {
+  const scroll = document.getElementById('convScroll');
+  if (!filteredConvs.length) {
+    scroll.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">💬</div>
+        <div class="empty-title">Sin conversaciones</div>
+        <div class="empty-sub">No hay mensajes que coincidan con tu búsqueda.</div>
+      </div>`;
+    return;
+  }
+
+  scroll.innerHTML = filteredConvs.map((conv, idx) => {
+    const initial = conv.userName[0]?.toUpperCase() || '?';
+    const preview = conv.lastMsg?.message || '';
+    const time = formatTime(conv.updatedTime);
+    const isMe = String(conv.lastMsg?.from?.id) === String(conv.pageId);
+    const previewText = isMe ? `Tú: ${preview}` : preview;
+
+    return `
+      <div class="conv-item ${conv.unread ? 'unread' : ''} ${conv.id === currentConvId ? 'selected' : ''}"
+           onclick="openChat(${idx})">
+        <div class="avatar" style="background:${getAvatarColor(conv.userName)}">${initial}</div>
+        <div class="conv-info">
+          <div class="conv-header">
+            <div class="conv-name">${escHtml(conv.userName)}</div>
+            <div class="conv-time">${time}</div>
+          </div>
+          <div class="conv-sub">
+            <div class="conv-preview">${escHtml(previewText.substring(0, 60))}</div>
+            <div class="conv-page-tag">${escHtml(conv.pageNombre)}</div>
+            ${conv.unread ? '<div class="unread-dot"></div>' : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ABRIR CHAT
+// ═══════════════════════════════════════════════════════════
+async function openChat(idx) {
+  const conv = filteredConvs[idx];
+  currentConvId = conv.id;
+  currentPageToken = conv.pageToken;
+  currentPageId = conv.pageId;
+  currentConvName = conv.userName;
+
+  // Actualizar header
+  document.getElementById('chatName').textContent = conv.userName;
+  document.getElementById('chatPage').textContent = conv.pageNombre;
+  document.getElementById('chatAvatar').textContent = conv.userName[0]?.toUpperCase() || '?';
+  document.getElementById('chatAvatar').style.background = getAvatarColor(conv.userName);
+
+  // Marcar como leída
+  conv.unread = false;
+  renderConvList();
+  updateUnreadBadge(allConversations.filter(c => c.unread).length);
+
+  // Mostrar chat
+  document.getElementById('convList').classList.add('hidden');
+  document.getElementById('chatView').classList.add('active');
+  document.getElementById('replyInput').value = '';
+  document.getElementById('replyInput').style.height = 'auto';
+
+  // Cargar mensajes completos
+  await loadChatMessages(conv.id, conv.pageToken, conv.pageId);
+}
+
+async function loadChatMessages(convId, token, pageId) {
+  const scroll = document.getElementById('messagesScroll');
+  scroll.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+
+  try {
+    const data = await fbGet(pageId,
+      `${convId}?fields=messages.limit(30){id,message,from,created_time}`,
+      token
+    );
+    const msgs = data.messages?.data || [];
+    renderMessages(msgs, pageId);
+  } catch(e) {
+    scroll.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><div class="empty-title">Error cargando mensajes</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+}
+
+function renderMessages(msgs, pageId) {
+  const scroll = document.getElementById('messagesScroll');
+  if (!msgs.length) {
+    scroll.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Sin mensajes</div></div>';
+    return;
+  }
+
+  let lastDate = '';
+  const html = msgs.map(msg => {
+    const isPage = String(msg.from?.id) === String(pageId);
+    const msgDate = new Date(msg.created_time).toLocaleDateString('es', { weekday:'short', day:'numeric', month:'short' });
+    let dateSep = '';
+    if (msgDate !== lastDate) {
+      lastDate = msgDate;
+      dateSep = `<div class="msg-date-sep">${msgDate}</div>`;
+    }
+    const time = new Date(msg.created_time).toLocaleTimeString('es', { hour:'2-digit', minute:'2-digit' });
+    return `${dateSep}
+      <div class="msg-wrap ${isPage ? 'from-page' : 'from-user'}">
+        <div class="msg-bubble">${escHtml(msg.message || '')}</div>
+        <div class="msg-time">${time}</div>
+      </div>`;
+  }).join('');
+
+  scroll.innerHTML = html;
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function closeChat() {
+  document.getElementById('convList').classList.remove('hidden');
+  document.getElementById('chatView').classList.remove('active');
+  currentConvId = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ENVIAR RESPUESTA
+// ═══════════════════════════════════════════════════════════
+async function sendReply() {
+  const input = document.getElementById('replyInput');
+  const text = input.value.trim();
+  if (!text || !currentConvId) return;
+
+  // Buscar userId
+  const conv = allConversations.find(c => c.id === currentConvId);
+  if (!conv?.userId) { showToast('❌ No se pudo identificar el usuario', 'error'); return; }
+
+  const btn = document.getElementById('btnSend');
+  btn.disabled = true;
+  input.disabled = true;
+
+  try {
+    const result = await fbPost('me/messages', currentPageToken, {
+      recipient: { id: conv.userId },
+      message: { text },
+      messaging_type: 'RESPONSE',
+    });
+
+    if (result.error) {
+      showToast(`❌ ${result.error.message}`, 'error');
+    } else {
+      input.value = '';
+      input.style.height = 'auto';
+      showToast('✅ Mensaje enviado', 'success');
+      conv.unread = false;
+      // Recargar mensajes del chat
+      await loadChatMessages(currentConvId, currentPageToken, currentPageId);
+    }
+  } catch(e) {
+    showToast(`❌ Error: ${e.message}`, 'error');
+  }
+
+  btn.disabled = false;
+  input.disabled = false;
+  input.focus();
+}
+
+function onReplyKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendReply();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════════════════════════
+function onPageChange() { loadConversations(); }
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`tab${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('active');
+  document.getElementById(`screen${tab.charAt(0).toUpperCase()+tab.slice(1)}`).classList.add('active');
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'dot' + (type ? ' ' + type : '');
+  document.getElementById('statusText').textContent = text;
+}
+
+function updateUnreadBadge(count) {
+  const badge = document.getElementById('unreadBadge');
+  const ibadge = document.getElementById('inboxBadge');
+  if (count > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = count;
+    ibadge.setAttribute('data-count', count);
+  } else {
+    badge.style.display = 'none';
+    ibadge.setAttribute('data-count', '0');
+  }
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return 'ahora';
+  if (diff < 3600000) return `${Math.floor(diff/60000)}m`;
+  if (diff < 86400000) return d.toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit'});
+  return d.toLocaleDateString('es', {day:'numeric', month:'short'});
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getAvatarColor(name) {
+  const colors = [
+    'linear-gradient(135deg,#4f6ef7,#7c3aed)',
+    'linear-gradient(135deg,#06b6d4,#3b82f6)',
+    'linear-gradient(135deg,#f59e0b,#ef4444)',
+    'linear-gradient(135deg,#22c55e,#06b6d4)',
+    'linear-gradient(135deg,#ec4899,#8b5cf6)',
+    'linear-gradient(135deg,#f97316,#ef4444)',
+  ];
+  let hash = 0;
+  for (const c of name) hash = (hash << 5) - hash + c.charCodeAt(0);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Service Worker para PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
